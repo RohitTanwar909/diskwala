@@ -7,7 +7,7 @@ from .resolver import resolve_diskwala
 
 app = FastAPI(
     title="DiskWala Resolver API",
-    description="API for resolving publicly accessible DiskWala file information.",
+    description="Independent public DiskWala URL resolver",
     version="1.0.0",
 )
 
@@ -18,7 +18,7 @@ async def root():
         "ok": True,
         "service": "DiskWala Resolver API",
         "status": "online",
-        "version": "1.0.0"
+        "version": "1.0.0",
     }
 
 
@@ -31,51 +31,54 @@ async def root_head():
 async def health():
     return {
         "ok": True,
-        "status": "healthy"
+        "status": "healthy",
     }
 
 
 @app.get(
     "/web/api/status",
-    response_model=StatusResponse
+    response_model=StatusResponse,
 )
 async def status(
     link: str = Query(
         ...,
-        description="Public DiskWala URL"
+        description="Public DiskWala app URL",
     )
 ):
-    # Validate URL
+
     if not validate_diskwala_url(link):
         raise HTTPException(
             status_code=400,
-            detail="Invalid DiskWala URL"
+            detail="Invalid DiskWala URL",
         )
 
     try:
-        # Resolve publicly accessible information
+
         file_info = await resolve_diskwala(link)
 
-        # No publicly available download URL
-        if not file_info.downloadUrl:
+        if file_info.downloadUrl:
+
             return StatusResponse(
                 ok=True,
-                status="processing",
-                file=file_info
+                status="done",
+                file=file_info,
             )
 
-        # Successfully resolved
         return StatusResponse(
             ok=True,
-            status="done",
-            file=file_info
+            status="unresolved",
+            file=file_info,
         )
 
     except Exception as exc:
-        print(f"Resolver error: {exc}")
+
+        print(
+            f"Resolver error: "
+            f"{type(exc).__name__}: {exc}"
+        )
 
         return StatusResponse(
             ok=False,
             status="failed",
-            file=None
+            file=None,
         )
