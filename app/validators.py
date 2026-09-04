@@ -14,9 +14,13 @@ def validate_diskwala_url(url: str) -> bool:
         if parsed.scheme not in ("http", "https"):
             return False
 
-        hostname = (parsed.hostname or "").lower()
+        if parsed.hostname not in ALLOWED_HOSTS:
+            return False
 
-        return hostname in ALLOWED_HOSTS
+        if not parsed.path.startswith("/app/"):
+            return False
+
+        return True
 
     except Exception:
         return False
